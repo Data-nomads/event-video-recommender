@@ -1,2 +1,2 @@
 # event-video-recommender
-A system that recommends promotional YouTube videos for concerts and events near the user using Ticketmaster data.
+A system that combines Ticketmaster and YouTube data to identify trending artists and recommend nearby events based on popularity and activity.
