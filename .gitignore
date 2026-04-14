@@ -1,0 +1,5 @@
+.idea/
+*.iml
+target/
+youtube-app/src/main/resources/application.properties
+youtube-app/data/
