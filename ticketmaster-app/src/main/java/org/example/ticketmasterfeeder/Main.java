@@ -3,7 +3,7 @@ package org.example.ticketmasterfeeder;
 public class Main {
     public static void main(String[] args) {
         System.out.println("Iniciando...");
-        ControllerTicketmaster controller = new ControllerTicketmaster();
+        org.example.ticketmasterfeeder.TicketmasterFeederService controller = new org.example.ticketmasterfeeder.TicketmasterFeederService();
         controller.start();
     }
 }

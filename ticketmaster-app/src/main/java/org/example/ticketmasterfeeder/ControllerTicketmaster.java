@@ -1,7 +1,7 @@
 package org.example.ticketmasterfeeder;
 
 import org.example.ticketmasterfeeder.adapters.TicketmasterEventsProvider;
-import org.example.ticketmasterfeeder.db.EventsTicketmasterStore;
+import org.example.ticketmasterfeeder.broker.TicketmasterPublisher;
 import org.example.ticketmasterfeeder.model.Event;
 
 import java.util.List;
@@ -12,12 +12,12 @@ import java.util.concurrent.TimeUnit;
 public class ControllerTicketmaster {
 
     private final TicketmasterEventsProvider provider;
-    private final EventsTicketmasterStore store;
+    private final TicketmasterPublisher publisher;
     private final ScheduledExecutorService scheduler;
 
     public ControllerTicketmaster() {
         this.provider = new TicketmasterEventsProvider();
-        this.store = new EventsTicketmasterStore();
+        this.publisher = new TicketmasterPublisher();
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
@@ -31,7 +31,7 @@ public class ControllerTicketmaster {
                     System.out.println("No hay nuevos eventos");
                 } else {
                     for (Event evento : eventosNuevos) {
-                        store.save(evento);
+                        publisher.publish(evento);
                     }
                     System.out.println("Se han procesado: " + eventosNuevos.size() + " eventos.");
                 }

@@ -1,8 +1,6 @@
 package org.example.youtubefeeder;
 
 import org.example.youtubefeeder.adapters.YoutubeVideosProvider;
-import org.example.youtubefeeder.db.DbConnection;
-import org.example.youtubefeeder.db.VideosYoutubeStore;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -16,14 +14,12 @@ public class Main {
         Properties props = loadProperties();
 
         YoutubeVideosProvider provider = new YoutubeVideosProvider(props);
-        DbConnection dbConnection = new DbConnection(props);
-        VideosYoutubeStore store = new VideosYoutubeStore(dbConnection);
-        ControllerYoutube controller = new ControllerYoutube(provider, store);
+        ControllerYoutube controller = new ControllerYoutube(provider);
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
         scheduler.scheduleAtFixedRate(() -> {
-            System.out.println("Fetching YouTube videos...");
+            System.out.println("Buscando videos en YouTube...");
             controller.run();
         }, 0, 1, TimeUnit.MINUTES);
     }
@@ -33,7 +29,7 @@ public class Main {
 
         try (InputStream input = Main.class.getClassLoader().getResourceAsStream("application.properties")) {
             if (input == null) {
-                throw new RuntimeException("No se encontró application.properties");
+                throw new RuntimeException("No se encontro application.properties");
             }
             props.load(input);
         } catch (Exception e) {

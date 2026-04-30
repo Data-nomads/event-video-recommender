@@ -1,33 +1,33 @@
 package org.example.youtubefeeder;
 
 import org.example.youtubefeeder.adapters.YoutubeVideosProvider;
-import org.example.youtubefeeder.db.VideosYoutubeStore;
+import org.example.youtubefeeder.broker.YoutubePublisher;
 import org.example.youtubefeeder.model.Video;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ControllerYoutube {
 
     private final YoutubeVideosProvider provider;
-    private final VideosYoutubeStore store;
+    private final YoutubePublisher publisher;
 
-    public ControllerYoutube(YoutubeVideosProvider provider, VideosYoutubeStore store) {
+    public ControllerYoutube(YoutubeVideosProvider provider) {
         this.provider = provider;
-        this.store = store;
+        this.publisher = new YoutubePublisher();
     }
 
     public void run() {
         String json = provider.getVideosJson();
         List<Video> videos = parseVideos(json);
 
-        store.createTableIfNotExists();
-        store.saveVideos(videos);
+        for (Video video : videos) {
+            publisher.publish(video);
+        }
 
-        System.out.println("Saved " + videos.size() + " videos in SQLite");
+        System.out.println("Procesados y enviados " + videos.size() + " videos a ActiveMQ");
     }
 
     private List<Video> parseVideos(String json) {
@@ -35,7 +35,6 @@ public class ControllerYoutube {
 
         JSONObject root = new JSONObject(json);
         JSONArray items = root.getJSONArray("items");
-        String capturedAt = LocalDateTime.now().toString();
 
         for (int i = 0; i < items.length(); i++) {
             JSONObject item = items.getJSONObject(i);
@@ -59,8 +58,7 @@ public class ControllerYoutube {
                     channelTitle,
                     publishedAt,
                     description,
-                    url,
-                    capturedAt
+                    url
             );
 
             videos.add(video);

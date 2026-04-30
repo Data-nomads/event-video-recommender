@@ -1,49 +1,29 @@
 package org.example.ticketmasterfeeder.model;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public class Event {
 
+    private final String ts;
+    private final String ss;
     private final String id;
     private final String name;
     private final String date;
     private final String venue;
-    private final LocalDateTime capturedAt;
 
-    public Event(String id, String name, String date, String venue, LocalDateTime capturedAt) {
+    public Event(String id, String name, String date, String venue) {
+        this.ts = Instant.now().toString();
+        this.ss = "ticketmaster-feeder";
         this.id = id;
         this.name = name;
         this.date = date;
         this.venue = venue;
-        this.capturedAt = capturedAt;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDate() {
-        return date;
-    }
-
-    public String getVenue() {
-        return venue;
-    }
-
-    public LocalDateTime getCapturedAt() {
-        return capturedAt;
-    }
-    @Override
-    public String toString() {
-        return "Event{" +
-                "name='" + name + '\'' +
-                ", date='" + date + '\'' +
-                ", venue='" + venue + '\'' +
-                ", capturedAt=" + capturedAt +
-                '}';
-    }
+    public String getTs() { return ts; }
+    public String getSs() { return ss; }
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public String getDate() { return date; }
+    public String getVenue() { return venue; }
 }

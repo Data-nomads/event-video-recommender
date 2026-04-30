@@ -89,8 +89,7 @@ public class TicketmasterEventsProvider {
                 }
             }
 
-            LocalDateTime capturedAt = LocalDateTime.now();
-            Event event = new Event(id, name, date, venue, capturedAt);
+            Event event = new Event(id, name, date, venue);
             parsedEvents.add(event);
         }
 
