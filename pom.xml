@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>youtube-app</module>
+        <module>youtube-feeder</module>
         <module>ticketmaster-app</module>
         <module>ticketmaster-app</module>
     </modules>

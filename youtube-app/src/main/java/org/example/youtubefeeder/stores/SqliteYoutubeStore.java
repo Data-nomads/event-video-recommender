@@ -1,5 +1,6 @@
-package org.example.youtubefeeder.db;
+package org.example.youtubefeeder.stores;
 
+import org.example.youtubefeeder.db.DbConnection;
 import org.example.youtubefeeder.model.Video;
 
 import java.sql.Connection;
@@ -7,15 +8,21 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 
-public class VideosYoutubeStore {
+public class SqliteYoutubeStore implements YoutubeStore {
 
     private final DbConnection dbConnection;
 
-    public VideosYoutubeStore(DbConnection dbConnection) {
+    public SqliteYoutubeStore(DbConnection dbConnection) {
         this.dbConnection = dbConnection;
     }
 
-    public void createTableIfNotExists() {
+    @Override
+    public void store(List<Video> videos) {
+        createTableIfNotExists();
+        saveVideos(videos);
+    }
+
+    private void createTableIfNotExists() {
         String sql = """
                 CREATE TABLE IF NOT EXISTS youtube_videos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +44,7 @@ public class VideosYoutubeStore {
         }
     }
 
-    public void saveVideos(List<Video> videos) {
+    private void saveVideos(List<Video> videos) {
         String sql = """
                 INSERT INTO youtube_videos
                 (video_id, title, channel_title, published_at, description, url, captured_at)

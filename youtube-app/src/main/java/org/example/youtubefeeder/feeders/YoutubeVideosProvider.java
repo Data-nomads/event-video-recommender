@@ -1,4 +1,4 @@
-package org.example.youtubefeeder.adapters;
+package org.example.youtubefeeder.feeders;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
