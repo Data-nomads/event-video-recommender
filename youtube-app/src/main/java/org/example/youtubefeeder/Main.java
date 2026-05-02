@@ -1,8 +1,12 @@
 package org.example.youtubefeeder;
 
-import org.example.youtubefeeder.adapters.YoutubeVideosProvider;
 import org.example.youtubefeeder.db.DbConnection;
-import org.example.youtubefeeder.db.VideosYoutubeStore;
+import org.example.youtubefeeder.feeders.YoutubeFeeder;
+import org.example.youtubefeeder.feeders.YoutubeVideosProvider;
+import org.example.youtubefeeder.stores.SqliteYoutubeStore;
+import org.example.youtubefeeder.stores.YoutubeStore;
+import org.example.youtubefeeder.broker.YoutubePublisher;
+import org.example.youtubefeeder.stores.ActiveMqYoutubeStore;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -15,10 +19,11 @@ public class Main {
     public static void main(String[] args) {
         Properties props = loadProperties();
 
-        YoutubeVideosProvider provider = new YoutubeVideosProvider(props);
-        DbConnection dbConnection = new DbConnection(props);
-        VideosYoutubeStore store = new VideosYoutubeStore(dbConnection);
-        ControllerYoutube controller = new ControllerYoutube(provider, store);
+        YoutubeFeeder feeder = new YoutubeVideosProvider(props);
+        YoutubePublisher publisher = new YoutubePublisher();
+        YoutubeStore store = new ActiveMqYoutubeStore(publisher);
+
+        ControllerYoutube controller = new ControllerYoutube(feeder, store);
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
