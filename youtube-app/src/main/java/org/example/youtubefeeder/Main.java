@@ -5,6 +5,8 @@ import org.example.youtubefeeder.feeders.YoutubeFeeder;
 import org.example.youtubefeeder.feeders.YoutubeVideosProvider;
 import org.example.youtubefeeder.stores.SqliteYoutubeStore;
 import org.example.youtubefeeder.stores.YoutubeStore;
+import org.example.youtubefeeder.broker.YoutubePublisher;
+import org.example.youtubefeeder.stores.ActiveMqYoutubeStore;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -18,8 +20,8 @@ public class Main {
         Properties props = loadProperties();
 
         YoutubeFeeder feeder = new YoutubeVideosProvider(props);
-        DbConnection dbConnection = new DbConnection(props);
-        YoutubeStore store = new SqliteYoutubeStore(dbConnection);
+        YoutubePublisher publisher = new YoutubePublisher();
+        YoutubeStore store = new ActiveMqYoutubeStore(publisher);
 
         ControllerYoutube controller = new ControllerYoutube(feeder, store);
 
