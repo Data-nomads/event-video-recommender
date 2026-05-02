@@ -1,4 +1,4 @@
-package org.example.ticketmasterfeeder.adapters;
+package org.example.ticketmasterfeeder.feeders;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

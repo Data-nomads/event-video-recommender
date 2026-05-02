@@ -1,5 +1,6 @@
-package org.example.ticketmasterfeeder.db;
+package org.example.ticketmasterfeeder.stores;
 
+import org.example.ticketmasterfeeder.db.DbConnection;
 import org.example.ticketmasterfeeder.model.Event;
 
 import java.sql.Connection;
@@ -7,9 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class EventsTicketmasterStore {
+public class SqliteTicketmasterStore {
 
-    public EventsTicketmasterStore() {
+    public SqliteTicketmasterStore() {
         createTableIfNotExists();
     }
 
