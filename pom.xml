@@ -12,6 +12,7 @@
     <modules>
         <module>youtube-app</module>
         <module>ticketmaster-app</module>
-        <module>ticketmaster-app</module>
+        <module>event-store-builder</module>
     </modules>
+
 </project>
