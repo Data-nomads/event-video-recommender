@@ -1,12 +1,10 @@
 package org.example.youtubefeeder;
 
-import org.example.youtubefeeder.db.DbConnection;
+import org.example.youtubefeeder.broker.YoutubePublisher;
 import org.example.youtubefeeder.feeders.YoutubeFeeder;
 import org.example.youtubefeeder.feeders.YoutubeVideosProvider;
-import org.example.youtubefeeder.stores.SqliteYoutubeStore;
-import org.example.youtubefeeder.stores.YoutubeStore;
-import org.example.youtubefeeder.broker.YoutubePublisher;
 import org.example.youtubefeeder.stores.ActiveMqYoutubeStore;
+import org.example.youtubefeeder.stores.YoutubeStore;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -27,10 +25,11 @@ public class Main {
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+        // Ajustado a 15 minutos para proteger la cuota de la API de YouTube
         scheduler.scheduleAtFixedRate(() -> {
-            System.out.println("Fetching YouTube videos...");
+            System.out.println("--- Iniciando ciclo de captura de YouTube ---");
             controller.run();
-        }, 0, 1, TimeUnit.MINUTES);
+        }, 0, 15, TimeUnit.MINUTES);
     }
 
     private static Properties loadProperties() {

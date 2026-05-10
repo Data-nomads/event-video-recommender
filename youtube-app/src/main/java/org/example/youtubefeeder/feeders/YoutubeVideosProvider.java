@@ -24,21 +24,44 @@ public class YoutubeVideosProvider implements YoutubeFeeder {
 
     @Override
     public List<Video> feed() {
-        String json = getVideosJson();
-        return parseVideos(json);
+        List<Video> allVideos = new ArrayList<>();
+
+        String queriesString = properties.getProperty("youtube.search.query");
+        if (queriesString == null || queriesString.isEmpty()) {
+            System.err.println("No se encontraron artistas en application.properties");
+            return allVideos;
+        }
+
+        // Separamos los artistas por las comas
+        String[] artists = queriesString.split(",");
+
+        for (String artist : artists) {
+            String cleanArtistName = artist.trim();
+            System.out.println("Buscando en YouTube los vídeos más vistos de: " + cleanArtistName);
+
+            try {
+                String json = getVideosJson(cleanArtistName);
+                allVideos.addAll(parseVideos(json));
+            } catch (Exception e) {
+                System.err.println("Error buscando a " + cleanArtistName + ": " + e.getMessage());
+            }
+        }
+
+        return allVideos;
     }
 
-    private String getVideosJson() {
+    private String getVideosJson(String artistQuery) {
         try {
             String apiKey = properties.getProperty("youtube.api.key");
             String baseUrl = properties.getProperty("youtube.api.base.url");
-            String query = properties.getProperty("youtube.search.query");
             String maxResults = properties.getProperty("youtube.search.maxResults");
 
+            // URL con el parámetro viewCount añadido para obtener los más populares
             String urlString = baseUrl + "/search"
                     + "?part=snippet"
-                    + "&q=" + query.replace(" ", "+")
+                    + "&q=" + artistQuery.replace(" ", "+")
                     + "&type=video"
+                    + "&order=viewCount"
                     + "&maxResults=" + maxResults
                     + "&key=" + apiKey;
 
@@ -47,8 +70,8 @@ public class YoutubeVideosProvider implements YoutubeFeeder {
             connection.setRequestMethod("GET");
 
             int responseCode = connection.getResponseCode();
-
             InputStream stream;
+
             if (responseCode >= 200 && responseCode < 300) {
                 stream = connection.getInputStream();
             } else {
@@ -60,7 +83,7 @@ public class YoutubeVideosProvider implements YoutubeFeeder {
             return readStream(stream);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error calling YouTube API", e);
+            throw new RuntimeException("Error llamando a la API de YouTube", e);
         }
     }
 
@@ -68,6 +91,8 @@ public class YoutubeVideosProvider implements YoutubeFeeder {
         List<Video> videos = new ArrayList<>();
 
         JSONObject root = new JSONObject(json);
+        if (!root.has("items")) return videos;
+
         JSONArray items = root.getJSONArray("items");
         String capturedAt = LocalDateTime.now().toString();
 
