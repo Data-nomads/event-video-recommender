@@ -17,7 +17,9 @@ import java.util.List;
 public class TicketmasterEventsProvider {
 
     private static final String API_KEY = "d9GCFWkvApHP74E5MO7n8lR4guGFxFjw";
-    private static final String URL_BASE = "https://app.ticketmaster.com/discovery/v2/events.json";
+
+    private static final String URL_BASE =
+            "https://app.ticketmaster.com/discovery/v2/events.json";
 
     private final OkHttpClient client;
 
@@ -26,81 +28,186 @@ public class TicketmasterEventsProvider {
     }
 
     public List<Event> getEvents() {
-        List<Event> eventsList = new ArrayList<>();
 
-        String url = URL_BASE + "?apikey=" + API_KEY + "&countryCode=ES";
+        List<Event> allEvents = new ArrayList<>();
 
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+        int page = 0;
+        int size = 200;
 
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                System.err.println("Error: " + response.code());
-                return eventsList;
+        boolean hasMorePages = true;
+
+        // Para no abusar de la API en la entrega
+        int maxPages = 5;
+
+        while (hasMorePages) {
+
+            String url = URL_BASE
+                    + "?apikey=" + API_KEY
+                    + "&countryCode=ES"
+                    + "&classificationName=music"
+                    + "&size=" + size
+                    + "&page=" + page;
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+
+                if (!response.isSuccessful()) {
+                    System.err.println("Error: " + response.code());
+                    break;
+                }
+
+                String jsonResponse = response.body().string();
+
+                List<Event> pageEvents = parseJsonResponse(jsonResponse);
+
+                allEvents.addAll(pageEvents);
+
+                System.out.println(
+                        "Página " + page
+                                + " procesada | Eventos obtenidos: "
+                                + pageEvents.size()
+                );
+
+                JsonObject rootObject =
+                        JsonParser.parseString(jsonResponse).getAsJsonObject();
+
+                if (!rootObject.has("page")) {
+                    break;
+                }
+
+                JsonObject pageInfo = rootObject.getAsJsonObject("page");
+
+                int totalPages = pageInfo.get("totalPages").getAsInt();
+
+                page++;
+
+                hasMorePages = page < totalPages && page < maxPages;
+
+            } catch (IOException e) {
+
+                System.err.println("Error: " + e.getMessage());
+                break;
             }
-
-            String jsonResponse = response.body().string();
-            eventsList = parseJsonResponse(jsonResponse);
-
-        } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
         }
 
-        return eventsList;
+        System.out.println(
+                "Total eventos obtenidos desde Ticketmaster: "
+                        + allEvents.size()
+        );
+
+        return allEvents;
     }
 
     private List<Event> parseJsonResponse(String json) {
+
         List<Event> parsedEvents = new ArrayList<>();
 
-        JsonObject rootObject = JsonParser.parseString(json).getAsJsonObject();
+        JsonObject rootObject =
+                JsonParser.parseString(json).getAsJsonObject();
 
         if (!rootObject.has("_embedded")) {
             return parsedEvents;
         }
 
-        JsonObject embedded = rootObject.getAsJsonObject("_embedded");
-        JsonArray eventsArray = embedded.getAsJsonArray("events");
+        JsonObject embedded =
+                rootObject.getAsJsonObject("_embedded");
+
+        JsonArray eventsArray =
+                embedded.getAsJsonArray("events");
 
         for (JsonElement element : eventsArray) {
+
             JsonObject eventObj = element.getAsJsonObject();
 
-            String id = getSafeString(eventObj, "id", "ID_DESCONOCIDO");
-            String name = getSafeString(eventObj, "name", "Nombre no disponible");
+            String id =
+                    getSafeString(eventObj,
+                            "id",
+                            "ID_DESCONOCIDO");
+
+            String name =
+                    getSafeString(eventObj,
+                            "name",
+                            "Nombre no disponible");
 
             String date = "Fecha no disponible";
-            if (eventObj.has("dates") && !eventObj.get("dates").isJsonNull()) {
-                JsonObject datesObj = eventObj.getAsJsonObject("dates");
-                if (datesObj.has("start") && !datesObj.get("start").isJsonNull()) {
-                    JsonObject startObj = datesObj.getAsJsonObject("start");
-                    date = getSafeString(startObj, "localDate", "Fecha no disponible");
+
+            if (eventObj.has("dates")
+                    && !eventObj.get("dates").isJsonNull()) {
+
+                JsonObject datesObj =
+                        eventObj.getAsJsonObject("dates");
+
+                if (datesObj.has("start")
+                        && !datesObj.get("start").isJsonNull()) {
+
+                    JsonObject startObj =
+                            datesObj.getAsJsonObject("start");
+
+                    date =
+                            getSafeString(startObj,
+                                    "localDate",
+                                    "Fecha no disponible");
                 }
             }
 
             String venue = "Recinto no disponible";
-            if (eventObj.has("_embedded") && !eventObj.get("_embedded").isJsonNull()) {
-                JsonObject embeddedObj = eventObj.getAsJsonObject("_embedded");
-                if (embeddedObj.has("venues") && !embeddedObj.get("venues").isJsonNull()) {
-                    JsonArray venuesArray = embeddedObj.getAsJsonArray("venues");
+
+            if (eventObj.has("_embedded")
+                    && !eventObj.get("_embedded").isJsonNull()) {
+
+                JsonObject embeddedObj =
+                        eventObj.getAsJsonObject("_embedded");
+
+                if (embeddedObj.has("venues")
+                        && !embeddedObj.get("venues").isJsonNull()) {
+
+                    JsonArray venuesArray =
+                            embeddedObj.getAsJsonArray("venues");
+
                     if (!venuesArray.isEmpty()) {
-                        JsonObject firstVenue = venuesArray.get(0).getAsJsonObject();
-                        venue = getSafeString(firstVenue, "name", "Recinto no disponible");
+
+                        JsonObject firstVenue =
+                                venuesArray.get(0).getAsJsonObject();
+
+                        venue =
+                                getSafeString(firstVenue,
+                                        "name",
+                                        "Recinto no disponible");
                     }
                 }
             }
 
             LocalDateTime capturedAt = LocalDateTime.now();
-            Event event = new Event(id, name, date, venue, capturedAt);
+
+            Event event = new Event(
+                    id,
+                    name,
+                    date,
+                    venue,
+                    capturedAt
+            );
+
             parsedEvents.add(event);
         }
 
         return parsedEvents;
     }
 
-    private String getSafeString(JsonObject obj, String key, String defaultValue) {
-        if (obj.has(key) && !obj.get(key).isJsonNull()) {
+    private String getSafeString(
+            JsonObject obj,
+            String key,
+            String defaultValue
+    ) {
+
+        if (obj.has(key)
+                && !obj.get(key).isJsonNull()) {
+
             return obj.get(key).getAsString();
         }
+
         return defaultValue;
     }
 }

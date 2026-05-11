@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 public class RecommenderDatamart {
@@ -18,6 +19,7 @@ public class RecommenderDatamart {
     private final Set<String> videoIds;
 
     public RecommenderDatamart() {
+
         this.events = new ArrayList<>();
         this.videos = new ArrayList<>();
 
@@ -28,6 +30,7 @@ public class RecommenderDatamart {
     public void addEvent(Event event) {
 
         if (!eventIds.contains(event.getId())) {
+
             this.events.add(event);
             this.eventIds.add(event.getId());
         }
@@ -36,6 +39,7 @@ public class RecommenderDatamart {
     public void addVideo(Video video) {
 
         if (!videoIds.contains(video.getVideoId())) {
+
             this.videos.add(video);
             this.videoIds.add(video.getVideoId());
         }
@@ -43,23 +47,64 @@ public class RecommenderDatamart {
 
     public List<String> getAvailableArtists() {
 
-        Set<String> artists = events.stream()
+        List<Event> eventsSnapshot = new ArrayList<>(events);
 
+        Set<String> artists = eventsSnapshot.stream()
                 .map(Event::getName)
-
-                // Ignorar festivales y VIP
-                .filter(name ->
-                        !name.toLowerCase().contains("festival") &&
-                                !name.toLowerCase().contains("vip"))
-
-                .collect(Collectors.toSet());
+                .map(this::normalizeArtistName)
+                .filter(this::isValidArtistOrTour)
+                .collect(Collectors.toCollection(TreeSet::new));
 
         return new ArrayList<>(artists);
     }
 
+    private String normalizeArtistName(String name) {
+
+        if (name == null) {
+            return "";
+        }
+
+        String normalized = name;
+
+        // Eliminar VIP
+        normalized = normalized.replace("| VIP Packages", "");
+
+        // Si contiene " - ", quedarse con la primera parte
+        if (normalized.contains(" - ")) {
+            normalized = normalized.split(" - ")[0];
+        }
+
+        return normalized.trim();
+    }
+
+    private boolean isValidArtistOrTour(String name) {
+
+        if (name == null || name.isBlank()) {
+            return false;
+        }
+
+        String lowerName = name.toLowerCase();
+
+        return !lowerName.contains("festival")
+                && !lowerName.contains("vip")
+                && !lowerName.contains("package")
+                && !lowerName.contains("parking")
+                && !lowerName.contains("plaza de parking")
+                && !lowerName.contains("1001 músicas")
+                && !lowerName.contains("caixabank");
+    }
+
     public List<Event> getEventsByArtist(String artistName) {
-        return events.stream()
-                .filter(e -> e.getName().equalsIgnoreCase(artistName))
+
+        List<Event> eventsSnapshot = new ArrayList<>(events);
+
+        String search = artistName.toLowerCase();
+
+        return eventsSnapshot.stream()
+                .filter(e ->
+                        normalizeArtistName(e.getName())
+                                .toLowerCase()
+                                .contains(search))
                 .collect(Collectors.toList());
     }
 
@@ -67,7 +112,6 @@ public class RecommenderDatamart {
 
         String searchName = artistName;
 
-        // Limpiar nombres de tour
         if (artistName.contains(":")) {
             searchName = artistName.split(":")[0].trim();
         }
@@ -80,9 +124,9 @@ public class RecommenderDatamart {
 
         return videos.stream()
                 .filter(v ->
-                        v.getTitle().toLowerCase().contains(finalSearchName) ||
-                                v.getChannelTitle().toLowerCase().contains(finalSearchName))
+                        v.getTitle().toLowerCase().contains(finalSearchName)
+                                || v.getChannelTitle().toLowerCase().contains(finalSearchName))
                 .limit(5)
                 .collect(Collectors.toList());
     }
-}
+}b
