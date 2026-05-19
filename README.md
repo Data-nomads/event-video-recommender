@@ -12,11 +12,11 @@ Se compone de los siguientes cuatro módulos independientes:
 
 1. **Productores (Feeders)**:
    - `ticketmaster-app`: Se conecta periódicamente a la API de Ticketmaster Discovery, extrae próximos eventos y los publica en el topic `TicketmasterEvents`.
-   - `youtube-app`: Consulta la API de YouTube Data v3 iterando sobre una lista de artistas configurables, extrae sus vídeos con más visualizaciones (`viewCount`) y los publica en el topic `YouTubeEvents`.
+   - `youtube-app`: Consume la API de YouTube Data v3 y publica información de vídeos musicales relacionados en el topic YouTubeEvents. Además, el sistema incorpora un YoutubeSearchService dinámico capaz de consultar vídeos populares en tiempo real bajo demanda según el artista seleccionado por el usuario.
 2. **Almacenamiento Histórico (Event Store)**:
    - `event-store-builder`: Actúa como un consumidor silencioso que escucha ambos topics y persiste los mensajes JSON crudos en el disco local (dentro de la carpeta `eventstore/`), organizados por fecha y proveedor, actuando como un Data Lake.
 3. **Unidad de Negocio (Business Unit)**:
-   - `business-unit`: Es el consumidor interactivo en tiempo real. Mantiene un **Datamart en memoria** que filtra eventos duplicados procesando sus IDs únicos. Expone un `ConsoleDashboard` (CLI) interactivo que cruza la información almacenada y muestra las recomendaciones al usuario de forma estructurada.
+   - `business-unit`: Es el consumidor interactivo en tiempo real. Mantiene un **Datamart en memoria** encargado de normalizar artistas, eliminar eventos duplicados mediante IDs únicos y cruzar información procedente de múltiples fuentes. Expone un `ConsoleDashboard` (CLI) interactivo que cruza la información almacenada y muestra las recomendaciones al usuario de forma estructurada.
 <img width="2816" height="1536" alt="Diagramadeclase_datanomads_V8" src="https://github.com/user-attachments/assets/8d582165-74fb-43c4-a1ce-550143f2f5ef" />
 
 
@@ -38,6 +38,7 @@ Para que el sistema funcione de manera fluida y se garantice que no se pierde ni
 
 ### Paso 4: Probar la Interfaz (Dashboard)
 6. Vuelve a la pestaña de la consola de ejecución del módulo **`business-unit`**.
-7. Verás que el menú se ha llenado automáticamente con una lista numerada de los artistas detectados por los emisores.
+7. Verás que el menú se ha llenado automáticamente con una lista de artistas y tours detectados dinámicamente desde Ticketmaster.
 8. **Escribe el número** correspondiente a uno de los artistas y pulsa **Enter**.
 9. La consola imprimirá inmediatamente la información cruzada: el nombre del artista, la lista de sus próximos eventos detallados (fecha y recinto) y el top de sus vídeos recomendados.
+10. El sistema también permite escribir manualmente cualquier artista, incluso aunque no existan conciertos registrados actualmente en Ticketmaster, devolviendo igualmente recomendaciones musicales desde YouTube si están disponibles.
