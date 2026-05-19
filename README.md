@@ -1,44 +1,305 @@
 # Event Video Recommender
 
-## Objetivo de la funcionalidad de negocio
+## Business Functionality Objective
 
-El objetivo principal de esta funcionalidad es generar valor cruzando flujos de datos independientes en tiempo real. El sistema detecta próximos conciertos de artistas a través de Ticketmaster y los enriquece cruzándolos con los vídeos más populares de esos mismos artistas en YouTube. De esta manera, se ofrece al usuario final un sistema de recomendaciones unificado donde puede descubrir eventos musicales y, simultáneamente, consumir el contenido audiovisual más relevante del artista, mejorando la experiencia de descubrimiento musical.
+The main objective of this project is to generate value by combining independent real-time data streams. The system detects upcoming music events through the Ticketmaster API and enriches them by combining them with the most popular videos of the same artists obtained from YouTube.
 
-## Arquitectura final del sistema
+This creates a unified recommendation system where users can simultaneously:
+- discover upcoming concerts,
+- explore artists,
+- and consume the most relevant audiovisual content associated with them.
 
-El sistema implementa una **Arquitectura Orientada a Eventos (Event-Driven Architecture)** completamente desacoplada, utilizando **Apache ActiveMQ** como broker de mensajería (siguiendo el patrón Productor/Consumidor).
+The project improves the musical discovery experience by integrating multiple external data sources into a single recommendation platform.
 
-Se compone de los siguientes cuatro módulos independientes:
+---
 
-1. **Productores (Feeders)**:
-   - `ticketmaster-app`: Se conecta periódicamente a la API de Ticketmaster Discovery, extrae próximos eventos y los publica en el topic `TicketmasterEvents`.
-   - `youtube-app`: Consume la API de YouTube Data v3 y publica información de vídeos musicales relacionados en el topic YouTubeEvents. Además, el sistema incorpora un YoutubeSearchService dinámico capaz de consultar vídeos populares en tiempo real bajo demanda según el artista seleccionado por el usuario.
-2. **Almacenamiento Histórico (Event Store)**:
-   - `event-store-builder`: Actúa como un consumidor silencioso que escucha ambos topics y persiste los mensajes JSON crudos en el disco local (dentro de la carpeta `eventstore/`), organizados por fecha y proveedor, actuando como un Data Lake.
-3. **Unidad de Negocio (Business Unit)**:
-   - `business-unit`: Es el consumidor interactivo en tiempo real. Mantiene un **Datamart en memoria** encargado de normalizar artistas, eliminar eventos duplicados mediante IDs únicos y cruzar información procedente de múltiples fuentes. Expone un `ConsoleDashboard` (CLI) interactivo que cruza la información almacenada y muestra las recomendaciones al usuario de forma estructurada.
+## Final System Architecture
+
+The system implements a fully decoupled **Event-Driven Architecture (EDA)** using **Apache ActiveMQ** as the messaging broker following the **Producer/Consumer** communication pattern.
+
+The application is composed of four independent modules:
+
+### 1. Producers (Feeders)
+
+- **`ticketmaster-app`**
+
+  Periodically connects to the Ticketmaster Discovery API, retrieves upcoming events and publishes them into the `TicketmasterEvents` topic.
+
+- **`youtube-app`**
+
+  Consumes the YouTube Data API v3 and publishes music video information into the `YouTubeEvents` topic.
+
+  Additionally, the system incorporates a dynamic `YoutubeSearchService` capable of performing real-time YouTube searches under demand according to the artist selected by the user.
+
+---
+
+### 2. Historical Storage (Event Store)
+
+- **`event-store-builder`**
+
+  Acts as a silent consumer that listens to both ActiveMQ topics and persists raw JSON events into the local disk inside the `eventstore/` directory.
+
+  Events are organized by:
+   - provider,
+   - subsystem,
+   - and date.
+
+  This module behaves as a lightweight Data Lake for historical event storage.
+
+---
+
+### 3. Business Unit
+
+- **`business-unit`**
+
+  Represents the interactive real-time consumer of the system.
+
+  It maintains an in-memory **Datamart** responsible for:
+   - normalizing artist names,
+   - removing duplicated events using unique IDs,
+   - filtering noisy Ticketmaster entries,
+   - and combining information from multiple data sources.
+
+  The module exposes an interactive CLI dashboard (`ConsoleDashboard`) capable of displaying:
+   - artists,
+   - upcoming concerts,
+   - and YouTube recommendations.
+
 <img width="2816" height="1536" alt="Diagramadeclase_datanomads_V8" src="https://github.com/user-attachments/assets/8d582165-74fb-43c4-a1ce-550143f2f5ef" />
 
+---
 
+# How to Run the System
 
-## Cómo ejecutar cada componente y probar la interfaz
+To guarantee a correct startup sequence and avoid losing events during initialization, the following execution order must be respected.
 
-Para que el sistema funcione de manera fluida y se garantice que no se pierde ningún evento en el arranque, se debe seguir este estricto orden de encendido:
+---
 
-### Paso 1: Inicializar el Broker
-1. Abre una terminal externa y arranca el servidor de **Apache ActiveMQ**. Asegúrate de que el proceso indique que está escuchando en el puerto por defecto (`tcp://localhost:61616`).
+## Step 1: Initialize Apache ActiveMQ
 
-### Paso 2: Inicializar Consumidores (Listeners)
-2. En tu IDE, ejecuta la clase `Main.java` del módulo **`event-store-builder`**.
-3. Ejecuta la clase `Main.java` del módulo **`business-unit`**. Verás en la consola el mensaje inicial de *"Esperando a recibir eventos desde ActiveMQ..."*.
+Open an external terminal and start the **Apache ActiveMQ** broker.
 
-### Paso 3: Inicializar Productores (Feeders)
-4. Ejecuta la clase `Main.java` del módulo **`ticketmaster-app`**.
-5. Ejecuta la clase `Main.java` del módulo **`youtube-app`**.
+Make sure the broker is listening on the default port:
 
-### Paso 4: Probar la Interfaz (Dashboard)
-6. Vuelve a la pestaña de la consola de ejecución del módulo **`business-unit`**.
-7. Verás que el menú se ha llenado automáticamente con una lista de artistas y tours detectados dinámicamente desde Ticketmaster.
-8. **Escribe el número** correspondiente a uno de los artistas y pulsa **Enter**.
-9. La consola imprimirá inmediatamente la información cruzada: el nombre del artista, la lista de sus próximos eventos detallados (fecha y recinto) y el top de sus vídeos recomendados.
-10. El sistema también permite escribir manualmente cualquier artista, incluso aunque no existan conciertos registrados actualmente en Ticketmaster, devolviendo igualmente recomendaciones musicales desde YouTube si están disponibles.
+```text
+tcp://localhost:61616
+```
+
+---
+
+## Step 2: Initialize Consumers (Listeners)
+
+Run the following modules from your IDE:
+
+1. `event-store-builder`
+2. `business-unit`
+
+The `business-unit` console should display a message similar to:
+
+```text
+Waiting for events from ActiveMQ...
+```
+
+---
+
+## Step 3: Initialize Producers (Feeders)
+
+Run the following modules:
+
+1. `ticketmaster-app`
+2. `youtube-app`
+
+These modules will begin publishing events into ActiveMQ topics.
+
+---
+
+## Step 4: Test the Dashboard
+
+Return to the execution console of the `business-unit` module.
+
+The dashboard will automatically display a dynamically generated list of artists and tours retrieved from Ticketmaster.
+
+Users can:
+- select an artist using its corresponding number,
+- or manually type any artist name.
+
+The system will immediately display:
+- upcoming concerts,
+- event dates,
+- venues,
+- and YouTube recommendations associated with the selected artist.
+
+The application also supports manual artist searches even if the artist currently has no concerts available in Ticketmaster.
+
+---
+
+# Examples of Real Usage
+
+This section presents different real execution scenarios of the application and demonstrates how the system integrates events retrieved from Ticketmaster with video recommendations obtained dynamically from the YouTube Data API.
+
+---
+
+## Example 1: Artist with Available Concerts
+
+### User Input
+
+```text
+Choose a number or type any artist: Bad Bunny
+```
+
+### Console Output
+
+```text
+=================================================
+Selected Artist: Bad Bunny
+=================================================
+
+Upcoming Events:
+
+1. Bad Bunny - DeBÍ TiRAR MáS FOToS World Tour
+   Date: 2026-05-22
+   Venue: Estadi Olímpic Lluis Companys
+
+2. Bad Bunny - DeBÍ TiRAR MáS FOToS World Tour
+   Date: 2026-05-23
+   Venue: Estadi Olímpic Lluis Companys
+
+Recommended YouTube Videos:
+
+1. Becky G, Bad Bunny - Mayores
+2. BAD BUNNY x JHAYCO - DÁKITI
+3. Cardi B, Bad Bunny & J Balvin - I Like It
+4. Bad Bunny - Moscow Mule
+5. Bad Bunny - Tití Me Preguntó
+```
+
+This example demonstrates the complete integration between:
+- Ticketmaster API,
+- ActiveMQ,
+- Datamart processing,
+- YouTube API,
+- and real-time recommendation generation.
+
+---
+
+## Example 2: Artist Without Available Concerts
+
+The system also supports artists that currently do not have available concerts in Ticketmaster.
+
+### User Input
+
+```text
+Choose a number or type any artist: Eminem
+```
+
+### Console Output
+
+```text
+=================================================
+Selected Artist: Eminem
+=================================================
+
+Upcoming Events:
+
+No concerts available for this artist.
+
+Recommended YouTube Videos:
+
+1. Eminem - Lose Yourself
+2. Eminem - Without Me
+3. Eminem - Mockingbird
+4. Eminem - Not Afraid
+5. Eminem ft. Rihanna - Love The Way You Lie
+```
+
+This behavior increases the flexibility of the recommendation system because it is not limited only to artists stored inside the Datamart.
+
+---
+
+## Example 3: Dynamic Recommendations Under Demand
+
+Initially, the project used a static approach where the `youtube-app` module periodically stored videos from a predefined list of artists.
+
+After the redesign, the system now performs YouTube recommendations dynamically under demand.
+
+This means:
+- the user can manually search any artist,
+- YouTube requests are only performed when necessary,
+- unnecessary API consumption is reduced,
+- and scalability is improved.
+
+### Advantages of the New Approach
+
+- Lower API usage
+- Reduced unnecessary requests
+- Greater scalability
+- Support for any artist
+- Faster recommendation updates
+- More realistic recommendation workflow
+
+---
+
+## Example 4: Artist Normalization and Duplicate Filtering
+
+Ticketmaster frequently returns noisy event names such as:
+- VIP packages,
+- parking tickets,
+- duplicated tours,
+- or festival-related entries.
+
+To improve recommendation quality, normalization filters were implemented inside the Datamart.
+
+### Example of Noisy Entries
+
+```text
+Plaza de Parking-Bad Bunny - DeBÍ TiRAR MáS FOToS World Tour
+VIP Packages
+Festival Access
+```
+
+After normalization, the dashboard only displays:
+
+```text
+Bad Bunny
+```
+
+This preprocessing stage improves:
+- readability,
+- recommendation quality,
+- dashboard usability,
+- and duplicate reduction.
+
+---
+
+## Example 5: Internal Event-Driven Workflow
+
+The following diagram summarizes the internal execution flow of the system:
+
+```text
+Ticketmaster API
+        ↓
+ticketmaster-app
+        ↓
+ActiveMQ Topic
+        ↓
+business-unit consumer
+        ↓
+Datamart update
+        ↓
+User selects artist
+        ↓
+YoutubeSearchService
+        ↓
+YouTube Data API
+        ↓
+Real-time recommendations
+        ↓
+ConsoleDashboard output
+```
+
+This architecture guarantees:
+- modularity,
+- decoupling,
+- scalability,
+- asynchronous communication,
+- and real-time event processing.
