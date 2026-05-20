@@ -74,7 +74,15 @@ The application is composed of four independent modules:
 To guarantee a correct startup sequence and avoid losing events during initialization, the following execution order must be respected.
 
 ---
+## Things to Take Into Account
 
+- Apache ActiveMQ must be initialized before launching producers and consumers.
+- Ticketmaster may return duplicated or noisy event names, therefore normalization filters are applied inside the Datamart.
+- YouTube recommendations are obtained dynamically under demand to reduce unnecessary API consumption.
+- The dashboard only displays a subset of artists for readability, although the system internally processes a much larger number of events.
+- The application requires internet connection in order to access external APIs.
+
+---
 ## Step 1: Initialize Apache ActiveMQ
 
 Open an external terminal and start the **Apache ActiveMQ** broker.
