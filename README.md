@@ -314,3 +314,14 @@ This architecture guarantees:
 - scalability,
 - asynchronous communication,
 - and real-time event processing.
+
+# Justification and Utility of Integrated APIs
+The system comes to life through the integration of two global APIs wich, when crossed, generate high added value for the end user. The choice of these data sources responds to a clear strategy of information enrichment:
+- **Ticketmaster DIscovery API:** Acts as the system's discovery engine. Its utility lies in providing a constant and structured flow of data about real world musical events (artists, dates, venues...). It is the "trigger" that feeds the core of our business logic.
+- **Youtube Data API**: Functions as the multimedia enrichment engine. It allows dynamically querying the most popular videos of the detected artists. Its utility is fundamental for user retention and experience: it transforms a simple "concert notice board" into an immersive experience, allowing the user to listen to an artist's greatest hits at the exact moment they discover their next concert.
+
+# Applied Design Principles and Patterns
+The project has been developed under the paradigm of an Event-Driven Architecture and rigorously respects SOLID principles, with special emphasis on Dependency Inversion and the SIngle Responsability Principle. The internal design of each module is detailed below:
+- **Producer modules**(Ticketmaster app and youtube app): The implement the Publisher pattern to inject messages into ActiveMQ asynchronously. Internally, they make intensive use of the Strategy pattern by relying on interfaces. This allows the controlles to orchetrate the flow without coupling to concrete technologies, facilitating the storage switch without altering the core business logic.
+- **Event Store Module**: (Event Store Builder): Implements the Observer/Listener pattern in its messaging variant (Consumer): It strictly applies the Single Responsability Principle: its sole job is to passively listen to the broker's topics and persist the history of raw messages (JSON) to disk. It acts as a Data Lake, isolating the backup logic from the operational logic of the rest of the system.
+- **Business unit module**(business-unit): Combines the observer pattern (via durable subscriptions to ActiveMQ) with an architecture inspired by MVC(Model-View-Controller). The ReccommenderDatamart class centralizes the application state, operating as an in-memory store that actively filters out event duplication. Meanwhile, the ConsoleDashboard acts as the view, ensuring a total Separation of Concerns, where the terminal presentation layer is completely unaware of how and from where the data originates at the network level.
