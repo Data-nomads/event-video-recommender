@@ -64,8 +64,11 @@ The application is composed of four independent modules:
    - artists,
    - upcoming concerts,
    - and YouTube recommendations.
+<img width="1438" height="649" alt="image" src="https://github.com/user-attachments/assets/1f4ce35a-398d-409f-bccb-b0316a7c43d6" />
+PDf del diagrama para mejor visualización: (https://github.com/user-attachments/files/28047810/diagrama_event_video_reccomender_pdf.pdf)
 
-<img width="2816" height="1536" alt="Diagramadeclase_datanomads_V8" src="https://github.com/user-attachments/assets/8d582165-74fb-43c4-a1ce-550143f2f5ef" />
+
+
 
 ---
 
